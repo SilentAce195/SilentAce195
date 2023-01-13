@@ -1,0 +1,59 @@
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Define navigation parameters
+kp = 0.5 # Proportional gain
+kzem = 0.1 # Zero effort miss gain
+max_velocity = 5 # Maximum velocity of the vehicle (m/s)
+
+# Define current state of the vehicle
+current_position = np.array([0, 0, 0]) # [x, y, z] position (m)
+current_velocity = np.array([1, 2, 3]) # [vx, vy, vz] velocity (m/s)
+current_attitude = np.array([0, 0, 0]) # [roll, pitch, yaw] attitude (rad)
+
+# Define target state of the vehicle
+target_position = np.array([10, 20, 30]) # [x, y, z] position (m)
+target_velocity = np.array([0, 0, 0]) # [vx, vy, vz] velocity (m/s)
+target_attitude = np.array([0, 0, 0]) # [roll, pitch, yaw] attitude (rad)
+
+# Initialize time and position arrays for plotting
+time = np.linspace(0, 10, 100)
+position_history = np.zeros((100, 3))
+
+# Loop through time steps
+for i, t in enumerate(time):
+    # Calculate navigation error
+    position_error = target_position - current_position
+    velocity_error = target_velocity - current_velocity
+    attitude_error = target_attitude - current_attitude
+
+    # Calculate zero effort miss
+    zem_vector = -kzem * current_velocity
+
+    # Calculate navigation command
+    position_command = kp * position_error + zem_vector
+    velocity_command = kp * velocity_error
+    attitude_command = kp * attitude_error
+
+    # Saturate navigation command
+    velocity_command = np.clip(velocity_command, -max_velocity, max_velocity)
+
+    # Apply navigation command to the vehicle
+    current_velocity += velocity_command
+    current_position += current_velocity
+    current_attitude += attitude_command
+
+    # Store position for plotting
+    position_history[i, :] = current_position
+
+# Plot the resulting target interception
+plt.plot(time, position_history[:, 0], label='x')
+plt.plot(time, position_history[:, 1], label='y')
+plt.plot(time, position_history[:, 2], label='z')
+plt.plot(time, np.ones(100)*target_position[0], '--', label='Target x')
+plt.plot(time, np.ones(100)*target_position[1], '--', label='Target y')
+plt.plot(time, np.ones(100)*target_position[2], '--', label='Target z')
+plt.xlabel('Time (s)')
+plt.ylabel('Position (m)')
+plt.legend()
+plt.show()
